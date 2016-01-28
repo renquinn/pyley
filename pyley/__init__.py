@@ -23,18 +23,38 @@ class CayleyResponse(object):
 
 class CayleyClient(object):
     def __init__(self, url="http://localhost:64210", version="v1"):
-        self.url = "%s/api/%s/query/gremlin" % (url, version)
+        self.gremlin_url = "%s/api/%s/query/gremlin" % (url, version)
+        self.write_url = "%s/api/%s/write" % (url, version)
 
     def Send(self, query):
         if isinstance(query, str):
-            r = requests.post(self.url, data=query)
+            r = requests.post(self.gremlin_url, data=query)
             return CayleyResponse(r, r.json())
         elif isinstance(query, _GremlinQuery):
-            r = requests.post(self.url, data=str(query))
+            r = requests.post(self.gremlin_url, data=str(query))
             return CayleyResponse(r, r.json())
         else:
             raise Exception("Invalid query parameter in Send")
 
+    def Post(self, quads):
+        r = requests.post(self.write_url, data=json.dumps(quads))
+        return CayleyResponse(r, r.json())
+
+class Quad(object):
+    def __init__(self, subject, predicate, obj, label=""):
+        self.subject = subject
+        self.predicate = predicate
+        self.obj = obj
+        self.label = label
+
+    def Dict(self):
+        quad = { "subject": self.subject, "predicate": self.predicate, "object": self.obj }
+        if self.label != "":
+            quad.label = self.label
+        return quad
+
+    def Json(self):
+        return json.dumps(self.Dict())
 
 class _GremlinQuery(object):
     queryDeclarations = None
